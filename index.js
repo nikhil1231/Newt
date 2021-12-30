@@ -1,3 +1,5 @@
 import { checkNewCoin } from "./coin.js";
 
-await checkNewCoin()
+const coin = await checkNewCoin()
+
+console.log(coin);
