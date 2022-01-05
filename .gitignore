@@ -1,2 +1,6 @@
 /data
-/node_modules
+*node_modules
+*/artifacts
+*/cache
+
+.env

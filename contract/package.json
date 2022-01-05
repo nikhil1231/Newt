@@ -1,0 +1,20 @@
+{
+  "name": "hardhat-project",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy-mainnet": "npx hardhat run scripts/deploy_mainnet.js --network mainnet",
+    "deploy-testnet": "npx hardhat run scripts/deploy_testnet.js --network testnet"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.3",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.5.2"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.4.1",
+    "envfile": "^6.17.0"
+  }
+}
