@@ -4,6 +4,7 @@ require('./scripts/deposit.js')
 require('./scripts/withdraw.js')
 require('./scripts/buy.js')
 require('./scripts/sell.js')
+require('./scripts/_test.js')
 
 dotenv.config({ path: '../.env' });
 
@@ -24,8 +25,9 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: 'https://bsc-dataseed.binance.org/',
-        blockNumber: 14016528,
+        // url: 'https://bsc-dataseed.binance.org/',
+        url: 'https://speedy-nodes-nyc.moralis.io/150280a5f4909a9125c09ac8/bsc/mainnet/archive',
+        blockNumber: 14312775,
       },
     },
     local: {

@@ -14,10 +14,10 @@ export const checkNewCoin = async () => {
 
     storeLatestCoin(latestFilteredCoin);
 
-    if (coinTimedOut(latestFilteredCoin)) {
-      console.log("Latest coin added too long ago.");
-      return null;
-    }
+    // if (coinTimedOut(latestFilteredCoin)) {
+    //   console.log("Latest coin added too long ago.");
+    //   return null;
+    // }
 
     const [market, info] = await Promise.all([getCoinMarket(latestFilteredCoin), getCoinInfo(latestFilteredCoin)])
 

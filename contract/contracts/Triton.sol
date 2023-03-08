@@ -2,20 +2,20 @@
 pragma solidity ^0.8.0;
 
 import "./interfaces/IERC20.sol";
-import "./interfaces/IPCR.sol";
 import "./interfaces/IWBNB.sol";
+import "./Library.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract Triton {
     address private immutable OWNER;
     IWBNB private immutable WBNB;
-    IPancakeRouter02 private immutable router;
+    address private immutable factory;
 
-    constructor(address WBNBAddress, address routerAddress) {
+    constructor(address WBNBAddress, address _factory) {
         OWNER = msg.sender;
         WBNB = IWBNB(WBNBAddress);
-        router = IPancakeRouter02(routerAddress);
+        factory = _factory;
     }
 
     modifier onlyOwner() {
@@ -42,28 +42,66 @@ contract Triton {
         payable(msg.sender).transfer(amount);
     }
 
-    function buy(uint256 amount, address[] calldata path) onlyOwner public {
-        require(path[0] == address(WBNB), "Can only buy with WBNB");
-        WBNB.approve(address(router), 2**256 - 1);
-        IERC20 token = IERC20(path[1]);
-        token.approve(address(router), 2**256 - 1);
+    function swap(uint256 amountIn, address[] memory path)
+        private
+        returns (uint256 amountOut)
+    {
+        amountOut = Library.getAmountOut(factory, amountIn, path);
+        require(amountOut >= 0, "Triton: INSUFFICIENT_OUTPUT_AMOUNT");
+        assert(
+            IERC20(path[0]).transfer(
+                Library.pairFor(factory, path[0], path[1]),
+                amountIn
+            )
+        );
+
+        (address input, address output) = (path[0], path[1]);
+        (address token0, ) = Library.sortTokens(input, output);
+        (uint256 amount0Out, uint256 amount1Out) = input == token0
+            ? (uint256(0), amountOut)
+            : (amountOut, uint256(0));
+        IPair(Library.pairFor(factory, input, output)).swap(
+            amount0Out,
+            amount1Out,
+            address(this),
+            new bytes(0)
+        );
+    }
+
+    function buy(uint256 amount, address tokenAddress) public onlyOwner {
+        address[] memory path = new address[](2);
+        path[0] = address(WBNB);
+        path[1] = tokenAddress;
 
         // Test buy-sell small amount
         uint256 bnbBalance = WBNB.balanceOf(address(this));
-        uint256[] memory amounts = router.swapExactTokensForTokens(1e10, 0, path, address(this), block.timestamp + 60);
+        uint256 amountOut = swap(1e10, path);
+
+        console.log(amountOut);
+        console.log(IERC20(tokenAddress).balanceOf(address(this)));
+        require(
+            amountOut == IERC20(tokenAddress).balanceOf(address(this)),
+            "TOXIC"
+        );
 
         address[] memory revPath = new address[](2);
-        revPath[0] = path[1];
-        revPath[1] = path[0];
-        router.swapExactTokensForTokens(amounts[1], 0, revPath, address(this), block.timestamp + 60);
+        revPath[0] = tokenAddress;
+        revPath[1] = address(WBNB);
+        swap(amountOut, revPath);
 
-        require(bnbBalance - WBNB.balanceOf(address(this)) < 5e8, "Lost too much");
+        require(
+            bnbBalance - WBNB.balanceOf(address(this)) < 5e8,
+            "Lost too much"
+        );
 
         // Should be safe from front-running, right?
-        router.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp + 60);
+        swap(amount, path);
     }
 
-    function sell(uint256 amount, address[] calldata path) onlyOwner public {
-        router.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp + 60);
+    function sell(uint256 amount, address tokenAddress) public onlyOwner {
+        address[] memory sellPath = new address[](2);
+        sellPath[0] = tokenAddress;
+        sellPath[1] = address(WBNB);
+        swap(amount, sellPath);
     }
 }
